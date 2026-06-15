@@ -1,0 +1,3 @@
+# No runtime dependencies — all stdlib (tkinter, ctypes, json, dataclasses)
+# Uncomment to enable single-file .exe packaging:
+# pyinstaller>=6.0

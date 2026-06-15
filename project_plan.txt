@@ -1,0 +1,140 @@
+Monitor Arrangement — Project Plan
+====================================
+
+GOAL
+----
+A standalone Windows 11 GUI application for arranging monitors with pixel-perfect
+precision. The built-in Windows Settings display arranger snaps monitors together
+and doesn't let you type exact pixel offsets. This tool solves that.
+
+
+REQUIREMENTS
+------------
+
+Core
+  - Detect all connected monitors (position, resolution, refresh rate, scale factor, name)
+  - Render a live canvas showing monitors as labeled, draggable rectangles
+  - Allow direct numeric input of X/Y position for each monitor
+  - Apply the new arrangement to Windows immediately (no reboot required)
+  - Show a live preview of the virtual desktop bounding box
+
+Quality-of-life
+  - Snap-to-edge / snap-to-grid toggle (with grid size field)
+  - "Identify" button that flashes a number overlay on each physical screen
+  - Undo / redo (at least 5 steps)
+  - Save / load named configuration profiles (JSON)
+  - Warn before applying if any monitor would be stranded (not touching another)
+  - Reset button to reload the current Windows state
+
+Out of scope (v1)
+  - Changing resolution, refresh rate, or orientation (future tab)
+  - Multi-GPU or projector-only setups (untested, may work)
+  - Remote/RDP display targets
+
+
+TECH STACK
+----------
+
+Language    : Python 3.11+
+GUI         : tkinter  (ships with Python, zero install friction)
+              — canvas widget handles the drag-and-drop arrangement view
+              — ttk for styled widgets
+Windows API : ctypes  (no extra install)
+              — EnumDisplayMonitors + GetMonitorInfo  →  read current layout
+              — EnumDisplaySettings / EnumDisplayDevices  →  read DEVMODE
+              — ChangeDisplaySettingsEx  →  write new positions
+              — SendMessage WM_SETTINGCHANGE  →  notify shell after applying
+Data        : json (stdlib) for profiles
+Packaging   : pyinstaller (optional, for a single .exe)
+
+Why tkinter over PyQt:
+  tkinter is in the stdlib, so the project has zero dependencies.
+  The canvas is fully adequate for a draggable rectangle layout tool.
+  If the UI needs to grow significantly, migrating to PyQt6 is straightforward.
+
+
+ARCHITECTURE
+------------
+
+monitor_arrangement/
+  main.py               — entry point, creates App and runs mainloop
+  monitors.py           — Windows API layer (read & write display config)
+  canvas_view.py        — tkinter Canvas subclass, draggable monitor rects
+  sidebar.py            — numeric input fields, per-monitor controls
+  toolbar.py            — Apply, Identify, Undo/Redo, Load/Save buttons
+  profiles.py           — JSON profile read/write
+  models.py             — MonitorInfo dataclass (pure Python, no Windows dep)
+  constants.py          — colours, snap distance, grid size defaults
+
+Data flow:
+  1. On startup: monitors.py → list[MonitorInfo] → canvas_view + sidebar
+  2. User drags rect on canvas → updates MonitorInfo.x, MonitorInfo.y → sidebar syncs
+  3. User types in sidebar field → updates MonitorInfo → canvas syncs
+  4. Apply pressed → monitors.py.apply(list[MonitorInfo]) → ChangeDisplaySettingsEx
+
+
+KEY WINDOWS API CALLS (ctypes)
+-------------------------------
+
+Reading layout:
+  EnumDisplayDevices(NULL, iDevNum, &dd, 0)        — iterate adapters
+  EnumDisplaySettings(dd.DeviceName, ENUM_CURRENT_SETTINGS, &dm)
+    → dm.dmPosition.x / .y  (virtual desktop coordinates)
+    → dm.dmPelsWidth / dm.dmPelsHeight
+    → dm.dmDisplayFrequency
+
+Writing layout:
+  For each monitor:
+    EnumDisplaySettings(name, ENUM_CURRENT_SETTINGS, &dm)
+    dm.dmPosition.x = new_x
+    dm.dmPosition.y = new_y
+    dm.dmFields |= DM_POSITION
+    ChangeDisplaySettingsEx(name, &dm, NULL, CDS_UPDATEREGISTRY | CDS_NORESET, NULL)
+  Then:
+    ChangeDisplaySettingsEx(NULL, NULL, NULL, 0, NULL)  — commit all at once
+
+This two-phase commit (per-monitor UPDATEREGISTRY+NORESET, then a final NULL call)
+is the correct pattern for moving multiple monitors simultaneously on Windows.
+
+
+IMPLEMENTATION ORDER
+--------------------
+
+Phase 1 — Read & Display
+  [1] models.py  — MonitorInfo dataclass
+  [2] monitors.py — read current config via ctypes, return list[MonitorInfo]
+  [3] canvas_view.py — draw scaled rectangles, label with name + resolution
+  [4] main.py — wire up App, show window with canvas
+
+Phase 2 — Interact & Edit
+  [5] Drag-to-move on canvas, update MonitorInfo.x/y live
+  [6] sidebar.py — X, Y numeric entry fields per monitor; two-way sync with canvas
+  [7] Snap-to-edge logic in canvas drag handler
+
+Phase 3 — Apply & Persist
+  [8] monitors.py — write config via ChangeDisplaySettingsEx two-phase commit
+  [9] Apply button with confirmation dialog
+  [10] Undo/redo stack (copy list[MonitorInfo] before each edit)
+  [11] profiles.py — save/load JSON
+  [12] Identify button (Toplevel overlays on each monitor)
+
+Phase 4 — Polish
+  [13] Error handling for API failures (monitor off, access denied)
+  [14] Snap-to-grid toggle + grid overlay on canvas
+  [15] Warn on stranded monitor
+  [16] Icon, window title, taskbar grouping
+  [17] Optional: pyinstaller single-file build
+
+
+RISKS & NOTES
+-------------
+- ChangeDisplaySettingsEx requires no special privileges on a standard user
+  account for position-only changes. Resolution changes may require elevation.
+- High-DPI / per-monitor DPI scaling: the DEVMODE coordinates are always in
+  physical pixels regardless of DPI. The canvas must scale for display only.
+- Windows virtualises display positions so (0,0) is the top-left of the primary
+  monitor. Negative coordinates are valid (monitors to the left/above primary).
+- After applying, Windows may briefly black-screen as it reconfigures — this is
+  normal and expected.
+- Some OEM drivers (NVIDIA, AMD) may reject positions that their software
+  considers invalid. Testing needed on a multi-GPU system.
