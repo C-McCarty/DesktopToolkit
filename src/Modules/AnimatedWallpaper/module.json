@@ -1,0 +1,10 @@
+{
+  "id": "animated-wallpaper",
+  "name": "Animated Wallpaper",
+  "description": "Play a GIF or video as your live desktop background, behind the icons, with per-monitor assignment and auto-pause for fullscreen apps.",
+  "version": "1.0.0",
+  "executable": "AnimatedDesktopBackground.exe",
+  "kind": "background",
+  "settingsWindow": true,
+  "settings": []
+}

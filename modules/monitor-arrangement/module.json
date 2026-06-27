@@ -1,0 +1,14 @@
+{
+  "id": "monitor-arrangement",
+  "name": "Monitor Arrangement",
+  "description": "Arrange monitors with pixel-perfect precision: drag, snap to grid/edges, type exact offsets, and apply without a reboot.",
+  "version": "1.0.0",
+  "executable": "MonitorArrangement.exe",
+  "kind": "window",
+  "settingsWindow": true,
+  "settings": [
+    { "key": "snapGrid", "type": "bool", "label": "Snap to grid", "default": true },
+    { "key": "gridSize", "type": "int", "label": "Grid size (px)", "default": 120, "min": 1 },
+    { "key": "snapEdges", "type": "bool", "label": "Snap to edges", "default": true }
+  ]
+}

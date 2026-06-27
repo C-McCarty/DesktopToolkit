@@ -1,0 +1,10 @@
+{
+  "id": "taskbar-manager",
+  "name": "Taskbar Manager",
+  "description": "Show or hide the Windows taskbar independently on each monitor, and let maximized windows reclaim the freed space.",
+  "version": "1.0.0",
+  "executable": "TaskbarManager.exe",
+  "kind": "background",
+  "settingsWindow": true,
+  "settings": []
+}

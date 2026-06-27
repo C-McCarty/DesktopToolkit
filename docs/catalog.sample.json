@@ -1,0 +1,25 @@
+{
+  "modules": [
+    {
+      "id": "monitor-arrangement",
+      "name": "Monitor Arrangement",
+      "description": "Arrange monitors with pixel-perfect precision: drag, snap to grid/edges, type exact offsets, and apply without a reboot.",
+      "version": "1.0.0",
+      "package": "https://github.com/<owner>/<repo>/releases/download/v1.0.0/monitor-arrangement.zip"
+    },
+    {
+      "id": "taskbar-manager",
+      "name": "Taskbar Manager",
+      "description": "Show or hide the Windows taskbar independently on each monitor, and let maximized windows reclaim the freed space.",
+      "version": "1.0.0",
+      "package": "https://github.com/<owner>/<repo>/releases/download/v1.0.0/taskbar-manager.zip"
+    },
+    {
+      "id": "animated-wallpaper",
+      "name": "Animated Wallpaper",
+      "description": "Play a GIF or video as your live desktop background, behind the icons, with per-monitor assignment and auto-pause for fullscreen apps.",
+      "version": "1.0.0",
+      "package": "https://github.com/<owner>/<repo>/releases/download/v1.0.0/animated-wallpaper.zip"
+    }
+  ]
+}
